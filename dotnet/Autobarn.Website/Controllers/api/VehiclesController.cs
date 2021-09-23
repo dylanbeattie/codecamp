@@ -37,10 +37,18 @@ namespace Autobarn.Website.Controllers.api {
 		[HttpGet]
 		[Produces("application/hal+json")]
 		public IActionResult Get(int index = 0, int count = 10) {
+			var _actions = new {
+				create = new {
+					method = "POST",
+					type = "application/json",
+					href = "/api/vehicles",
+					name = "Create a new vehicle"
+				}
+			};
 			var items = db.ListVehicles().Skip(index).Take(count);
 			var total = db.CountVehicles();
 			var _links = Paginate("/api/vehicles", index, count, total);
-			var result = new { _links, index, count, total, items };
+			var result = new { _links, _actions, index, count, total, items };
 			return Ok(result);
 		}
 
@@ -71,6 +79,10 @@ namespace Autobarn.Website.Controllers.api {
 		// POST api/vehicles
 		[HttpPost]
 		public IActionResult Post([FromBody] VehicleDto dto) {
+			var existing = db.FindVehicle(dto.Registration);
+			if (existing != default)
+				return Conflict(
+					$"There is already a vehicle with registration {dto.Registration} listed in the database.");
 			var vehicleModel = db.FindModel(dto.ModelCode);
 			var vehicle = new Vehicle {
 				Registration = dto.Registration,
@@ -78,9 +90,12 @@ namespace Autobarn.Website.Controllers.api {
 				Year = dto.Year,
 				VehicleModel = vehicleModel
 			};
+			var href = $"/api/vehicles/{dto.Registration}";
 			db.CreateVehicle(vehicle);
 			bus.PublishNewVehicleMessage(vehicle);
-			return Ok(dto);
+			var result = dto.ToDynamic();
+			result._links = new { self = new { href } };
+			return Created(href, result);
 		}
 
 		// PUT api/vehicles/ABC123

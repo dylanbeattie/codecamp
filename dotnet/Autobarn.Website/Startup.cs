@@ -35,7 +35,7 @@ namespace Autobarn.Website {
 			}
 			var bus = RabbitHutch.CreateBus(Configuration.GetConnectionString("AutobarnRabbitMQ"));
 			services.AddSingleton(bus);
-			//services.AddSignalR();
+			services.AddSignalR();
 		}
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
@@ -43,7 +43,6 @@ namespace Autobarn.Website {
 				app.UseDeveloperExceptionPage();
 			} else {
 				app.UseExceptionHandler("/Home/Error");
-				// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 				app.UseHsts();
 			}
 
@@ -57,7 +56,7 @@ namespace Autobarn.Website {
 				endpoints.MapControllerRoute(
 					name: "default",
 					pattern: "{controller=Home}/{action=Index}/{id?}");
-				// endpoints.MapHub<AutobarnHub>("/hub");
+				endpoints.MapHub<AutobarnHub>("/hub");
 			});
 		}
 	}
