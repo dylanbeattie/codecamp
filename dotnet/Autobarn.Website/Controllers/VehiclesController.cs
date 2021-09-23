@@ -1,14 +1,17 @@
 ﻿using Autobarn.Data;
 using Autobarn.Data.Entities;
 using Autobarn.Website.Models;
+using EasyNetQ;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autobarn.Website.Controllers {
 	public class VehiclesController : Controller {
 		private readonly IAutobarnDatabase db;
+		private readonly IBus bus;
 
-		public VehiclesController(IAutobarnDatabase db) {
+		public VehiclesController(IAutobarnDatabase db, IBus bus) {
 			this.db = db;
+			this.bus = bus;
 		}
 		public IActionResult Index() {
 			var vehicles = db.ListVehicles();
@@ -49,6 +52,7 @@ namespace Autobarn.Website.Controllers {
 				Year = dto.Year
 			};
 			db.CreateVehicle(vehicle);
+			bus.PublishNewVehicleMessage(vehicle);
 			return RedirectToAction("Details", new { id = vehicle.Registration });
 		}
 	}
